@@ -183,10 +183,10 @@
 <body>
 
 <div class="tabs">
-    <div class="tab active" data-tab="buy">🛵 Купить</div>
-    <div class="tab" data-tab="active">📱 Мой номер</div>
-    <div class="tab" data-tab="profile">👤 Профиль</div>
-    <div class="tab" data-tab="referral">👥 Рефералы</div>
+    <div class="tab active" data-tab="buy">Купить</div>
+    <div class="tab" data-tab="active">Мой номер</div>
+    <div class="tab" data-tab="profile">Профиль</div>
+    <div class="tab" data-tab="referral">Рефералы</div>
 </div>
 
 <!-- Вкладка покупки -->
@@ -198,19 +198,19 @@
             <span class="balance-amount" id="balanceDisplay">0</span>
             <span class="balance-label">₽</span>
         </div>
-        <button id="topupBtn">💎 Пополнить баланс</button>
+        <button id="topupBtn">Пополнить баланс</button>
     </div>
 
     <div class="card">
-        <div class="card-title">🛵 Купить номер Whoosh</div>
+        <div class="card-title"> Купить номер Whoosh</div>
         <select id="tariffSelect">
             <option value="20min">20 минут — 43 ₽</option>
         </select>
-        <input type="text" id="promoCode" placeholder="Промокод (есть скидка 5% WELCOME)">
+        <input type="text" id="promoCode" placeholder="Промокод (необязательно)">
         <div class="button-group">
-            <button id="buyBalanceBtn">💰 Оплатить с баланса</button>
-            <button id="buyCryptoBtn">💎 Купить за USDT</button>
-            <button id="buyManualBtn">💳 Перевод на карту</button>
+            <button id="buyBalanceBtn">Оплатить с баланса</button>
+            <button id="buyCryptoBtn">Купить за USDT</button>
+            <button id="buyManualBtn">Перевод на карту</button>
         </div>
         <div id="orderStatus" style="margin-top: 12px; font-size: 14px;"></div>
     </div>
@@ -219,12 +219,12 @@
 <!-- Вкладка активного номера -->
 <div id="tab-active" class="tab-content">
     <div class="card" id="activeNumberCard" style="display: none;">
-        <div class="card-title">📞 Активный номер</div>
+        <div class="card-title">Активный номер</div>
         <div class="phone-number" id="activePhone">+7 XXX XXX XX XX</div>
         <div class="button-group">
-            <button id="getSmsBtn">📩 Получить код</button>
-            <button id="replaceNumberBtn" class="secondary">🔄 Заменить номер</button>
-            <button id="cancelNumberBtn" class="danger">❌ Отменить аренду</button>
+            <button id="getSmsBtn">Получить код</button>
+            <button id="replaceNumberBtn" class="secondary">Заменить номер</button>
+            <button id="cancelNumberBtn" class="danger">Отменить аренду</button>
         </div>
         <div id="smsCodeBlock" style="margin-top: 12px;"></div>
         <div id="expiryInfo" style="margin-top: 12px; font-size: 13px; opacity: 0.7;"></div>
@@ -237,11 +237,11 @@
 <!-- Вкладка профиля -->
 <div id="tab-profile" class="tab-content">
     <div class="card">
-        <div class="card-title">👤 Ваш профиль</div>
+        <div class="card-title">Ваш профиль</div>
         <div><strong>Telegram ID:</strong> <span id="tgUserId"></span></div>
         <div><strong>Баланс:</strong> <span id="profileBalance">0</span> ₽</div>
         <div><strong>Всего покупок:</strong> <span id="totalOrders">0</span></div>
-        <button id="profileTopupBtn" style="margin-top: 12px;">💰 Пополнить</button>
+        <button id="profileTopupBtn" style="margin-top: 12px;">Пополнить</button>
     </div>
 </div>
 
@@ -262,7 +262,7 @@
 <script>
     // ==================== НАСТРОЙКИ ====================
     // ⚠️ ИЗМЕНИТЕ ЭТОТ АДРЕС НА АДРЕС ВАШЕГО БЭКЕНДА (main_webapp.py)
-    const API_BASE = '';   // если бэкенд на том же хосте/порту что и html, оставьте ''
+    const API_BASE = 'https://yaroslavkriliv-afk.github.io/';   // если бэкенд на том же хосте/порту что и html, оставьте ''
     // Если используете ngrok, укажите: const API_BASE = 'https://abc123.ngrok.io';
     // Если локально и бэкенд на 8000, а html раздаётся другим сервером: const API_BASE = 'http://localhost:8000';
 
@@ -271,7 +271,7 @@
     tg.enableClosingConfirmation();
     const userId = tg.initDataUnsafe.user?.id;
     if (!userId) {
-        alert("Ошибка: не удалось определить пользователя. Запустите бота через Telegram.");
+        alert("Грандиозное обновление Grand SMS! Используй промокод <<LETOUPD>> и получи скидку 40%!");
     }
 
     let currentOrderId = null;
