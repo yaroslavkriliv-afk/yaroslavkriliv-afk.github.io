@@ -1,67 +1,633 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Estrofia Whoosh</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: system-ui; padding: 16px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        .card { background: var(--tg-theme-secondary-bg-color); padding: 12px; border-radius: 12px; margin-bottom: 12px; }
-        button { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; padding: 10px 16px; border-radius: 8px; margin: 4px; }
-        .balance { font-size: 24px; font-weight: bold; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        /* Карточки */
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Баланс */
+        .balance-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .balance-amount {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--tg-theme-button-color);
+        }
+        .balance-label {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Кнопки */
+        button, .button-like {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+        button:active { opacity: 0.8; }
+        button.secondary {
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-theme-hint-color);
+        }
+        button.danger {
+            background: #e53935;
+            color: white;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .button-group button {
+            flex: 1;
+        }
+
+        /* Поля ввода */
+        input, select {
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-theme-hint-color);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--tg-theme-button-color);
+        }
+
+        /* Статусы */
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .info { color: var(--tg-theme-link-color); }
+
+        /* Номер и код */
+        .phone-number {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: var(--tg-theme-bg-color);
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            margin: 12px 0;
+        }
+        .sms-code {
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            padding: 12px;
+            border-radius: 16px;
+            margin-top: 12px;
+        }
+        .ref-link {
+            background: var(--tg-theme-bg-color);
+            padding: 10px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: var(--tg-theme-secondary-bg-color);
+            padding: 6px;
+            border-radius: 30px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 30px;
+            background: transparent;
+            color: var(--tg-theme-text-color);
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab.active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Адаптив */
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .balance-amount { font-size: 28px; }
+        }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div class="card">
-            <div>💰 Баланс: <span id="balance">0</span> руб.</div>
-            <button id="topupBtn">Пополнить</button>
+
+<div class="tabs">
+    <div class="tab active" data-tab="buy">🛵 Купить</div>
+    <div class="tab" data-tab="active">📱 Мой номер</div>
+    <div class="tab" data-tab="profile">👤 Профиль</div>
+    <div class="tab" data-tab="referral">👥 Рефералы</div>
+</div>
+
+<!-- Вкладка покупки -->
+<div id="tab-buy" class="tab-content active">
+    <div class="card">
+        <div class="card-title">💰 Баланс</div>
+        <div class="balance-block">
+            <span class="balance-label">Ваш баланс</span>
+            <span class="balance-amount" id="balanceDisplay">0</span>
+            <span class="balance-label">₽</span>
         </div>
-        <div class="card">
-            <h3>Купить номер</h3>
-            <select id="tariffSelect">
-                <option value="20min">20 минут — 43 руб.</option>
-            </select>
-            <input type="text" id="promoCode" placeholder="Промокод (необязательно)">
-            <button id="buyCryptoBtn">Купить за USDT</button>
-            <button id="buyBalanceBtn">Купить с баланса</button>
-            <button id="buyManualBtn">Перевод на карту</button>
-        </div>
-        <div id="orderStatus"></div>
+        <button id="topupBtn">💎 Пополнить баланс</button>
     </div>
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        const userId = tg.initDataUnsafe.user?.id;
 
-        async function apiCall(endpoint, method='GET', body=null) {
-            const opts = { method, headers: {'Content-Type': 'application/json'} };
-            if (body) opts.body = JSON.stringify(body);
-            const res = await fetch(`https://github.com/yaroslavkriliv-afk/GrandSMS.git/api/${endpoint}?user_id=${userId}`, opts);
-            return res.json();
-        }
+    <div class="card">
+        <div class="card-title">🛵 Купить номер Whoosh</div>
+        <select id="tariffSelect">
+            <option value="20min">20 минут — 43 ₽</option>
+        </select>
+        <input type="text" id="promoCode" placeholder="Промокод (есть скидка 5% WELCOME)">
+        <div class="button-group">
+            <button id="buyBalanceBtn">💰 Оплатить с баланса</button>
+            <button id="buyCryptoBtn">💎 Купить за USDT</button>
+            <button id="buyManualBtn">💳 Перевод на карту</button>
+        </div>
+        <div id="orderStatus" style="margin-top: 12px; font-size: 14px;"></div>
+    </div>
+</div>
 
-        async function loadProfile() {
-            const data = await apiCall('user');
-            document.getElementById('balance').innerText = data.balance;
-        }
+<!-- Вкладка активного номера -->
+<div id="tab-active" class="tab-content">
+    <div class="card" id="activeNumberCard" style="display: none;">
+        <div class="card-title">📞 Активный номер</div>
+        <div class="phone-number" id="activePhone">+7 XXX XXX XX XX</div>
+        <div class="button-group">
+            <button id="getSmsBtn">📩 Получить код</button>
+            <button id="replaceNumberBtn" class="secondary">🔄 Заменить номер</button>
+            <button id="cancelNumberBtn" class="danger">❌ Отменить аренду</button>
+        </div>
+        <div id="smsCodeBlock" style="margin-top: 12px;"></div>
+        <div id="expiryInfo" style="margin-top: 12px; font-size: 13px; opacity: 0.7;"></div>
+    </div>
+    <div id="noActiveNumber" class="card">
+        <p>У вас нет активного номера. Купите номер во вкладке «Купить».</p>
+    </div>
+</div>
 
-        document.getElementById('buyBalanceBtn').onclick = async () => {
-            const res = await apiCall('create_order', 'POST', {
-                tariff_id: document.getElementById('tariffSelect').value,
-                payment_method: 'balance',
-                promo_code: document.getElementById('promoCode').value
-            });
-            if (res.success) {
-                document.getElementById('orderStatus').innerHTML = `✅ Заказ оплачен, номер: +${res.phone}`;
-                loadProfile();
-            } else {
-                alert(res.error);
-            }
+<!-- Вкладка профиля -->
+<div id="tab-profile" class="tab-content">
+    <div class="card">
+        <div class="card-title">👤 Ваш профиль</div>
+        <div><strong>Telegram ID:</strong> <span id="tgUserId"></span></div>
+        <div><strong>Баланс:</strong> <span id="profileBalance">0</span> ₽</div>
+        <div><strong>Всего покупок:</strong> <span id="totalOrders">0</span></div>
+        <button id="profileTopupBtn" style="margin-top: 12px;">💰 Пополнить</button>
+    </div>
+</div>
+
+<!-- Вкладка рефералов -->
+<div id="tab-referral" class="tab-content">
+    <div class="card">
+        <div class="card-title">👥 Реферальная программа</div>
+        <p>Приглашайте друзей и получайте <strong>3 ₽</strong> за каждую их первую покупку!</p>
+        <div style="margin: 12px 0;">
+            <div class="ref-link" id="refLink">Загрузка...</div>
+            <button id="copyRefBtn" style="margin-top: 8px;">📋 Скопировать ссылку</button>
+        </div>
+        <div><strong>Приглашено:</strong> <span id="invitedCount">0</span></div>
+        <div><strong>Заработано бонусов:</strong> <span id="totalBonus">0</span> ₽</div>
+    </div>
+</div>
+
+<script>
+    // ==================== НАСТРОЙКИ ====================
+    // ⚠️ ИЗМЕНИТЕ ЭТОТ АДРЕС НА АДРЕС ВАШЕГО БЭКЕНДА (main_webapp.py)
+    const API_BASE = '';   // если бэкенд на том же хосте/порту что и html, оставьте ''
+    // Если используете ngrok, укажите: const API_BASE = 'https://abc123.ngrok.io';
+    // Если локально и бэкенд на 8000, а html раздаётся другим сервером: const API_BASE = 'http://localhost:8000';
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.enableClosingConfirmation();
+    const userId = tg.initDataUnsafe.user?.id;
+    if (!userId) {
+        alert("Ошибка: не удалось определить пользователя. Запустите бота через Telegram.");
+    }
+
+    let currentOrderId = null;
+    let currentActivationId = null;
+    let currentPhone = null;
+    let expiryInterval = null;
+
+    // Вспомогательная функция для API-вызовов
+    async function apiCall(endpoint, method = 'GET', body = null) {
+        const url = `${API_BASE}/api/${endpoint}?user_id=${userId}`;
+        const options = {
+            method,
+            headers: { 'Content-Type': 'application/json' },
         };
+        if (body) options.body = JSON.stringify(body);
+        try {
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Ошибка ${res.status}: ${errorText}`);
+            }
+            return await res.json();
+        } catch (e) {
+            console.error(`API ${endpoint} error:`, e);
+            tg.showPopup({ title: 'Ошибка', message: e.message, buttons: [{ type: 'ok' }] });
+            throw e;
+        }
+    }
 
-        loadProfile();
-    </script>
+    // Загрузка профиля (баланс, статы)
+    async function loadProfile() {
+        try {
+            const data = await apiCall('user');
+            document.getElementById('balanceDisplay').innerText = data.balance.toFixed(2);
+            document.getElementById('profileBalance').innerText = data.balance.toFixed(2);
+            document.getElementById('totalOrders').innerText = data.total_orders || 0;
+            document.getElementById('tgUserId').innerText = userId;
+        } catch (e) {}
+    }
+
+    // Проверка активного заказа (по сохранённому order_id)
+    async function checkActiveOrder() {
+        const savedOrderId = localStorage.getItem(`active_order_${userId}`);
+        if (!savedOrderId) {
+            showNoActiveNumber();
+            return;
+        }
+        try {
+            const statusData = await apiCall(`order_status?order_id=${savedOrderId}`);
+            if (statusData.status === 'completed' && statusData.phone) {
+                currentOrderId = parseInt(savedOrderId);
+                currentActivationId = statusData.activation_id;
+                currentPhone = statusData.phone;
+                showActiveNumber(currentPhone, currentActivationId);
+                // Если уже есть SMS код в БД
+                if (statusData.sms_code) {
+                    document.getElementById('smsCodeBlock').innerHTML = `<div class="sms-code">${statusData.sms_code}</div>`;
+                }
+                // Запросим время истечения? В бэкенде нет expires_at, но можно примерно вычислить по времени выдачи (не храним). Пока скрываем.
+            } else {
+                localStorage.removeItem(`active_order_${userId}`);
+                showNoActiveNumber();
+            }
+        } catch (e) {
+            localStorage.removeItem(`active_order_${userId}`);
+            showNoActiveNumber();
+        }
+    }
+
+    function showActiveNumber(phone, activationId) {
+        document.getElementById('activeNumberCard').style.display = 'block';
+        document.getElementById('noActiveNumber').style.display = 'none';
+        document.getElementById('activePhone').innerText = `+${phone}`;
+        currentActivationId = activationId;
+        // Сброс блока кода
+        document.getElementById('smsCodeBlock').innerHTML = '';
+        if (expiryInterval) clearInterval(expiryInterval);
+    }
+
+    function showNoActiveNumber() {
+        document.getElementById('activeNumberCard').style.display = 'none';
+        document.getElementById('noActiveNumber').style.display = 'block';
+        currentOrderId = null;
+        currentActivationId = null;
+        currentPhone = null;
+        if (expiryInterval) clearInterval(expiryInterval);
+    }
+
+    // Получение SMS-кода
+    async function fetchSmsCode() {
+        if (!currentActivationId) {
+            tg.showAlert('Нет активного номера.');
+            return;
+        }
+        try {
+            const data = await apiCall('get_sms', 'POST', { activation_id: currentActivationId });
+            if (data.code) {
+                document.getElementById('smsCodeBlock').innerHTML = `<div class="sms-code">${data.code}</div>`;
+                tg.showAlert('Код получен!');
+            } else {
+                tg.showAlert('Код ещё не пришёл. Подождите 10-20 секунд и попробуйте снова.');
+            }
+        } catch (e) {}
+    }
+
+    // Замена номера
+    async function replaceNumber() {
+        if (!currentOrderId) {
+            tg.showAlert('Нет активного заказа');
+            return;
+        }
+        try {
+            const data = await apiCall('replace_number', 'POST', { order_id: currentOrderId });
+            if (data.phone) {
+                currentPhone = data.phone;
+                currentActivationId = data.activation_id;
+                document.getElementById('activePhone').innerText = `+${data.phone}`;
+                document.getElementById('smsCodeBlock').innerHTML = '';
+                tg.showAlert('Номер успешно заменён!');
+            } else {
+                tg.showAlert(data.error || 'Ошибка замены');
+            }
+        } catch (e) {}
+    }
+
+    // Отмена номера с возвратом средств
+    async function cancelNumber() {
+        if (!currentOrderId) return;
+        tg.showPopup({
+            title: 'Отмена аренды',
+            message: 'Деньги вернутся на баланс. Номер станет недействительным. Продолжить?',
+            buttons: [
+                { type: 'ok', text: 'Да' },
+                { type: 'cancel', text: 'Нет' }
+            ]
+        }, async (buttonId) => {
+            if (buttonId === 'ok') {
+                try {
+                    const data = await apiCall('cancel_number', 'POST', { order_id: currentOrderId });
+                    if (data.success) {
+                        tg.showAlert(`Аренда отменена. Возвращено ${data.refunded} ₽`);
+                        localStorage.removeItem(`active_order_${userId}`);
+                        showNoActiveNumber();
+                        loadProfile();
+                    } else {
+                        tg.showAlert(data.error || 'Ошибка отмены');
+                    }
+                } catch (e) {}
+            }
+        });
+    }
+
+    // Покупка с баланса
+    async function buyWithBalance() {
+        const tariff = document.getElementById('tariffSelect').value;
+        const promo = document.getElementById('promoCode').value.trim();
+        try {
+            const result = await apiCall('create_order', 'POST', {
+                tariff_id: tariff,
+                payment_method: 'balance',
+                promo_code: promo
+            });
+            if (result.success) {
+                currentOrderId = result.order_id;
+                currentActivationId = result.activation_id;
+                currentPhone = result.phone;
+                localStorage.setItem(`active_order_${userId}`, result.order_id);
+                showActiveNumber(result.phone, result.activation_id);
+                document.getElementById('orderStatus').innerHTML = `<span class="success">✅ Оплачено! Номер получен: +${result.phone}</span>`;
+                loadProfile();
+                setTimeout(() => document.getElementById('orderStatus').innerHTML = '', 5000);
+                // Переключим на вкладку активного номера
+                switchTab('active');
+            } else {
+                tg.showAlert(result.error || 'Ошибка при оплате');
+            }
+        } catch (e) {}
+    }
+
+    // Крипто-оплата
+    async function buyWithCrypto() {
+        const tariff = document.getElementById('tariffSelect').value;
+        const promo = document.getElementById('promoCode').value.trim();
+        try {
+            const result = await apiCall('create_order', 'POST', {
+                tariff_id: tariff,
+                payment_method: 'crypto',
+                promo_code: promo
+            });
+            if (result.pay_url) {
+                tg.openLink(result.pay_url);
+                tg.showAlert('Оплатите счёт в CryptoBot. После оплаты номер придёт автоматически.');
+                // Начинаем проверку статуса заказа
+                const interval = setInterval(async () => {
+                    try {
+                        const statusData = await apiCall(`order_status?order_id=${result.order_id}`);
+                        if (statusData.status === 'completed' && statusData.phone) {
+                            clearInterval(interval);
+                            currentOrderId = result.order_id;
+                            currentActivationId = statusData.activation_id;
+                            currentPhone = statusData.phone;
+                            localStorage.setItem(`active_order_${userId}`, result.order_id);
+                            showActiveNumber(statusData.phone, statusData.activation_id);
+                            loadProfile();
+                            tg.showAlert('Номер получен!');
+                            switchTab('active');
+                        } else if (statusData.status === 'cancelled') {
+                            clearInterval(interval);
+                            tg.showAlert('Время оплаты истекло.');
+                        }
+                    } catch (e) {}
+                }, 5000);
+                setTimeout(() => clearInterval(interval), 10 * 60 * 1000);
+            } else {
+                tg.showAlert(result.error || 'Ошибка создания счёта');
+            }
+        } catch (e) {}
+    }
+
+    // Ручной перевод
+    async function buyWithManual() {
+        const tariff = document.getElementById('tariffSelect').value;
+        const promo = document.getElementById('promoCode').value.trim();
+        try {
+            const result = await apiCall('create_order', 'POST', {
+                tariff_id: tariff,
+                payment_method: 'manual',
+                promo_code: promo
+            });
+            if (result.card_number) {
+                tg.showPopup({
+                    title: 'Реквизиты для оплаты',
+                    message: `Переведите ${result.price} руб. на карту ${result.card_number} (${result.bank})\n\nКомментарий: Заказ #${result.order_num}, ID ${result.personal_id}\n\nПосле перевода нажмите "Я оплатил"`,
+                    buttons: [
+                        { type: 'ok', text: '✅ Я оплатил' },
+                        { type: 'cancel', text: 'Отмена' }
+                    ]
+                }, async (buttonId) => {
+                    if (buttonId === 'ok') {
+                        try {
+                            const confirmRes = await apiCall('confirm_manual', 'POST', { order_id: result.order_id });
+                            if (confirmRes.success) {
+                                tg.showAlert('Заявка отправлена администратору. Номер придёт после подтверждения оплаты.');
+                            } else {
+                                tg.showAlert(confirmRes.error || 'Ошибка');
+                            }
+                        } catch (e) {}
+                    }
+                });
+            } else {
+                tg.showAlert(result.error || 'Ошибка');
+            }
+        } catch (e) {}
+    }
+
+    // Пополнение баланса (крипта / ручной)
+    function topupBalance() {
+        tg.showPopup({
+            title: 'Пополнение баланса',
+            message: 'Выберите способ пополнения:',
+            buttons: [
+                { id: 'crypto', text: '💎 CryptoBot (USDT)' },
+                { id: 'manual', text: '💳 Перевод на карту' },
+                { type: 'cancel', text: 'Отмена' }
+            ]
+        }, async (buttonId) => {
+            if (buttonId === 'crypto') {
+                tg.showPopup({
+                    title: 'Сумма в USDT',
+                    message: 'Введите сумму в долларах (USDT)',
+                    buttons: [{ type: 'ok', text: 'ОК' }, { type: 'cancel' }],
+                    input: { placeholder: '10' }
+                }, async (buttonId, inputText) => {
+                    if (buttonId === 'ok' && inputText) {
+                        const usdt = parseFloat(inputText);
+                        if (isNaN(usdt) || usdt <= 0) return tg.showAlert('Введите число >0');
+                        // Создаём депозит через отдельный эндпоинт? В бэкенде нет /api/topup, но есть /api/create_order для тарифа.
+                        // Упростим: предложим ручной перевод с фикс. суммой или через крипто-депозит (не реализован в бэкенде).
+                        // В бэкенде есть create_deposit? В main_webapp.py нет эндпоинта для пополнения. Добавим простой метод: переводим на карту админа с комментарием.
+                        tg.showAlert('Функция пополнения через крипту в разработке. Пожалуйста, используйте ручной перевод.');
+                    }
+                });
+            } else if (buttonId === 'manual') {
+                tg.showPopup({
+                    title: 'Ручное пополнение',
+                    message: 'Введите сумму в рублях',
+                    buttons: [{ type: 'ok', text: 'ОК' }, { type: 'cancel' }],
+                    input: { placeholder: '100' }
+                }, async (buttonId, amountStr) => {
+                    if (buttonId === 'ok' && amountStr) {
+                        const rub = parseFloat(amountStr);
+                        if (isNaN(rub) || rub <= 0) return tg.showAlert('Введите сумму >0');
+                        // Создаём депозит через бэкенд (нужен эндпоинт). Для простоты пока скажем админу.
+                        tg.showAlert(`Переведите ${rub} руб. на карту +79825934930 (Т-Банк) с комментарием "Пополнение ID ${userId}". После оплаты напишите администратору @chaosestrofia`);
+                    }
+                });
+            }
+        });
+    }
+
+    // Реферальная статистика
+    async function loadReferralStats() {
+        try {
+            const data = await apiCall('referral_stats');
+            document.getElementById('refLink').innerText = data.referral_code ? `https://t.me/${tg.initDataUnsafe.user?.username ? tg.initDataUnsafe.user.username : 'EstrofiaWhooshBot'}?start=ref${data.referral_code}` : 'Ошибка';
+            document.getElementById('invitedCount').innerText = data.invited_count;
+            document.getElementById('totalBonus').innerText = data.total_bonus.toFixed(2);
+        } catch (e) {}
+    }
+
+    // Копирование ссылки
+    function copyRefLink() {
+        const link = document.getElementById('refLink').innerText;
+        navigator.clipboard.writeText(link);
+        tg.showAlert('Ссылка скопирована!');
+    }
+
+    // Переключение вкладок
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+        if (tabId === 'active') checkActiveOrder();
+        if (tabId === 'referral') loadReferralStats();
+        if (tabId === 'profile') loadProfile();
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Назначение обработчиков
+        document.getElementById('buyBalanceBtn').onclick = buyWithBalance;
+        document.getElementById('buyCryptoBtn').onclick = buyWithCrypto;
+        document.getElementById('buyManualBtn').onclick = buyWithManual;
+        document.getElementById('topupBtn').onclick = topupBalance;
+        document.getElementById('profileTopupBtn').onclick = topupBalance;
+        document.getElementById('getSmsBtn').onclick = fetchSmsCode;
+        document.getElementById('replaceNumberBtn').onclick = replaceNumber;
+        document.getElementById('cancelNumberBtn').onclick = cancelNumber;
+        document.getElementById('copyRefBtn').onclick = copyRefLink;
+
+        // Обработка вкладок
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.onclick = () => switchTab(tab.getAttribute('data-tab'));
+        });
+
+        await loadProfile();
+        await checkActiveOrder();
+        await loadReferralStats();
+
+        // Если нет активного, но есть сохранённый order_id – проверим его
+        const saved = localStorage.getItem(`active_order_${userId}`);
+        if (saved && !currentOrderId) {
+            checkActiveOrder();
+        }
+    });
+</script>
 </body>
 </html>
