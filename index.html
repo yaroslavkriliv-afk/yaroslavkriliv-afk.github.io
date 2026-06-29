@@ -134,6 +134,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: 0.2s;
+            user-select: none;
         }
         .tab.active {
             background: var(--tg-theme-button-color);
@@ -151,7 +152,7 @@
 
 <div class="tabs">
     <div class="tab active" data-tab="buy">🛵 Купить</div>
-    <div class="tab" data-tab="active">Мой номер</div>
+    <div class="tab" data-tab="active">📱 Мой номер</div>
     <div class="tab" data-tab="profile">👤 Профиль</div>
     <div class="tab" data-tab="referral">👥 Рефералы</div>
 </div>
@@ -226,7 +227,7 @@
 
 <script>
     // ===== НАСТРОЙКИ =====
-    const API_BASE = '';   // ⚠️ УКАЖИТЕ АДРЕС БЭКЕНДА
+    const API_BASE = '';   // ⚠️ УКАЖИТЕ АДРЕС БЭКЕНДА (например, 'https://ваш-сервер.ngrok.io')
 
     const tg = window.Telegram.WebApp;
     tg.expand();
@@ -238,6 +239,48 @@
     let currentActivationId = null;
     let currentPhone = null;
 
+    // ---------- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
+    function switchTab(tabId) {
+        console.log('Переключение на вкладку:', tabId);
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById(`tab-${tabId}`);
+        if (target) target.classList.add('active');
+
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
+        if (tabBtn) tabBtn.classList.add('active');
+
+        if (tabId === 'active') checkActiveOrder();
+        if (tabId === 'referral') loadReferralStats();
+        if (tabId === 'profile') loadProfile();
+    }
+
+    // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM загружен');
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+
+        document.getElementById('buyBalanceBtn').onclick = buyWithBalance;
+        document.getElementById('buyCryptoBtn').onclick = buyWithCrypto;
+        document.getElementById('buyManualBtn').onclick = buyWithManual;
+        document.getElementById('topupBtn').onclick = topupBalance;
+        document.getElementById('profileTopupBtn').onclick = topupBalance;
+        document.getElementById('getSmsBtn').onclick = fetchSmsCode;
+        document.getElementById('replaceNumberBtn').onclick = replaceNumber;
+        document.getElementById('cancelNumberBtn').onclick = cancelNumber;
+        document.getElementById('copyRefBtn').onclick = copyRefLink;
+
+        loadProfile();
+        checkActiveOrder();
+        loadReferralStats();
+    });
+
+    // ---------- API И БИЗНЕС-ЛОГИКА ----------
     async function apiCall(endpoint, method = 'GET', body = null) {
         const url = `${API_BASE}/api/${endpoint}?user_id=${userId}`;
         const options = { method, headers: { 'Content-Type': 'application/json' } };
@@ -447,44 +490,61 @@
         } catch (e) {}
     }
 
+    // ===== НОВАЯ ФУНКЦИЯ ПОПОЛНЕНИЯ БАЛАНСА =====
     function topupBalance() {
         tg.showPopup({
             title: 'Пополнение баланса',
-            message: 'Выберите способ:',
+            message: 'Выберите сумму в рублях:',
             buttons: [
-                { id: 'crypto', text: '💎 CryptoBot (USDT)' },
-                { id: 'manual', text: '💳 Перевод на карту' },
+                { id: '100', text: '100 ₽' },
+                { id: '200', text: '200 ₽' },
+                { id: '500', text: '500 ₽' },
+                { id: '1000', text: '1000 ₽' },
+                { id: 'other', text: 'Другая сумма' },
                 { type: 'cancel', text: 'Отмена' }
             ]
         }, async (buttonId) => {
-            if (buttonId === 'crypto') {
+            if (buttonId === 'cancel' || !buttonId) return;
+            if (buttonId === 'other') {
+                // Пытаемся показать popup с полем ввода
                 tg.showPopup({
-                    title: 'Сумма в USDT',
-                    message: 'Введите сумму в долларах (USDT)',
-                    buttons: [{ type: 'ok', text: 'ОК' }, { type: 'cancel' }],
-                    input: { placeholder: '10' }
-                }, async (buttonId, inputText) => {
-                    if (buttonId === 'ok' && inputText) {
-                        const usdt = parseFloat(inputText);
-                        if (isNaN(usdt) || usdt <= 0) return tg.showAlert('Введите число >0');
-                        tg.showAlert('Функция пополнения через крипту в разработке. Используйте ручной перевод.');
+                    title: 'Введите сумму',
+                    message: 'Сумма в рублях:',
+                    input: { placeholder: '100' },
+                    buttons: [{ type: 'ok', text: 'ОК' }, { type: 'cancel' }]
+                }, async (result, inputText) => {
+                    if (result === 'ok' && inputText) {
+                        const amount = parseFloat(inputText);
+                        if (isNaN(amount) || amount <= 0) {
+                            tg.showAlert('Введите корректную сумму');
+                            return;
+                        }
+                        processTopup(amount);
                     }
                 });
-            } else if (buttonId === 'manual') {
-                tg.showPopup({
-                    title: 'Ручное пополнение',
-                    message: 'Введите сумму в рублях',
-                    buttons: [{ type: 'ok', text: 'ОК' }, { type: 'cancel' }],
-                    input: { placeholder: '100' }
-                }, async (buttonId, amountStr) => {
-                    if (buttonId === 'ok' && amountStr) {
-                        const rub = parseFloat(amountStr);
-                        if (isNaN(rub) || rub <= 0) return tg.showAlert('Введите сумму >0');
-                        tg.showAlert(`Переведите ${rub} руб. на карту +79825934930 (Т-Банк) с комментарием "Пополнение ID ${userId}". После оплаты напишите администратору @chaosestrofia`);
-                    }
-                });
+            } else {
+                const amount = parseInt(buttonId);
+                processTopup(amount);
             }
         });
+    }
+
+    // Обработчик пополнения (заглушка, нужно заменить на реальный API)
+    function processTopup(amount) {
+        // Здесь должен быть вызов API для создания депозита
+        // Например: const result = await apiCall('topup', 'POST', { amount });
+        // Пока просто показываем уведомление
+        tg.showAlert(`Вы выбрали пополнение на ${amount} руб. Функция в разработке.`);
+        // Если есть реальный эндпоинт, раскомментируйте:
+        // try {
+        //     const result = await apiCall('topup', 'POST', { amount });
+        //     if (result.success) {
+        //         tg.showAlert(`Баланс пополнен на ${amount} руб.`);
+        //         loadProfile();
+        //     } else {
+        //         tg.showAlert(result.error || 'Ошибка пополнения');
+        //     }
+        // } catch (e) {}
     }
 
     async function loadReferralStats() {
@@ -501,36 +561,6 @@
         navigator.clipboard.writeText(link);
         tg.showAlert('Ссылка скопирована!');
     }
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
-        if (tabId === 'active') checkActiveOrder();
-        if (tabId === 'referral') loadReferralStats();
-        if (tabId === 'profile') loadProfile();
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        document.getElementById('buyBalanceBtn').onclick = buyWithBalance;
-        document.getElementById('buyCryptoBtn').onclick = buyWithCrypto;
-        document.getElementById('buyManualBtn').onclick = buyWithManual;
-        document.getElementById('topupBtn').onclick = topupBalance;
-        document.getElementById('profileTopupBtn').onclick = topupBalance;
-        document.getElementById('getSmsBtn').onclick = fetchSmsCode;
-        document.getElementById('replaceNumberBtn').onclick = replaceNumber;
-        document.getElementById('cancelNumberBtn').onclick = cancelNumber;
-        document.getElementById('copyRefBtn').onclick = copyRefLink;
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.onclick = () => switchTab(tab.getAttribute('data-tab'));
-        });
-
-        await loadProfile();
-        await checkActiveOrder();
-        await loadReferralStats();
-    });
 </script>
 </body>
 </html>
