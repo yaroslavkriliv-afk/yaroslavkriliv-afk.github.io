@@ -134,6 +134,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: 0.2s;
+            user-select: none;
         }
         .tab.active {
             background: var(--tg-theme-button-color);
@@ -151,7 +152,7 @@
 
 <div class="tabs">
     <div class="tab active" data-tab="buy">🛵 Купить</div>
-    <div class="tab" data-tab="active">Мой номер</div>
+    <div class="tab" data-tab="active">📱 Мой номер</div>
     <div class="tab" data-tab="profile">👤 Профиль</div>
     <div class="tab" data-tab="referral">👥 Рефералы</div>
 </div>
@@ -226,7 +227,7 @@
 
 <script>
     // ===== НАСТРОЙКИ =====
-    const API_BASE = '';   // ⚠️ УКАЖИТЕ АДРЕС БЭКЕНДА
+    const API_BASE = '';   // ⚠️ УКАЖИТЕ АДРЕС БЭКЕНДА (например, 'https://ваш-сервер.ngrok.io')
 
     const tg = window.Telegram.WebApp;
     tg.expand();
@@ -238,6 +239,56 @@
     let currentActivationId = null;
     let currentPhone = null;
 
+    // ---------- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
+    function switchTab(tabId) {
+        console.log('Переключение на вкладку:', tabId);
+        // Скрываем все содержимое вкладок
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        // Показываем нужную
+        const target = document.getElementById(`tab-${tabId}`);
+        if (target) target.classList.add('active');
+
+        // Снимаем активный класс со всех табов
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        // Находим таб с соответствующим data-tab и добавляем active
+        const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
+        if (tabBtn) tabBtn.classList.add('active');
+
+        // Дополнительные действия при переключении (обновление данных)
+        if (tabId === 'active') checkActiveOrder();
+        if (tabId === 'referral') loadReferralStats();
+        if (tabId === 'profile') loadProfile();
+    }
+
+    // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM загружен');
+        // Навешиваем обработчики на все табы
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+
+        // Остальные обработчики кнопок (они уже были)
+        document.getElementById('buyBalanceBtn').onclick = buyWithBalance;
+        document.getElementById('buyCryptoBtn').onclick = buyWithCrypto;
+        document.getElementById('buyManualBtn').onclick = buyWithManual;
+        document.getElementById('topupBtn').onclick = topupBalance;
+        document.getElementById('profileTopupBtn').onclick = topupBalance;
+        document.getElementById('getSmsBtn').onclick = fetchSmsCode;
+        document.getElementById('replaceNumberBtn').onclick = replaceNumber;
+        document.getElementById('cancelNumberBtn').onclick = cancelNumber;
+        document.getElementById('copyRefBtn').onclick = copyRefLink;
+
+        // Загрузка начальных данных
+        loadProfile();
+        checkActiveOrder();
+        loadReferralStats();
+    });
+
+    // ---------- API И БИЗНЕС-ЛОГИКА (без изменений) ----------
     async function apiCall(endpoint, method = 'GET', body = null) {
         const url = `${API_BASE}/api/${endpoint}?user_id=${userId}`;
         const options = { method, headers: { 'Content-Type': 'application/json' } };
@@ -502,35 +553,8 @@
         tg.showAlert('Ссылка скопирована!');
     }
 
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
-        if (tabId === 'active') checkActiveOrder();
-        if (tabId === 'referral') loadReferralStats();
-        if (tabId === 'profile') loadProfile();
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        document.getElementById('buyBalanceBtn').onclick = buyWithBalance;
-        document.getElementById('buyCryptoBtn').onclick = buyWithCrypto;
-        document.getElementById('buyManualBtn').onclick = buyWithManual;
-        document.getElementById('topupBtn').onclick = topupBalance;
-        document.getElementById('profileTopupBtn').onclick = topupBalance;
-        document.getElementById('getSmsBtn').onclick = fetchSmsCode;
-        document.getElementById('replaceNumberBtn').onclick = replaceNumber;
-        document.getElementById('cancelNumberBtn').onclick = cancelNumber;
-        document.getElementById('copyRefBtn').onclick = copyRefLink;
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.onclick = () => switchTab(tab.getAttribute('data-tab'));
-        });
-
-        await loadProfile();
-        await checkActiveOrder();
-        await loadReferralStats();
-    });
+    // Вызываем переключение вкладок при загрузке (чтобы первая вкладка была активной)
+    // Но она уже активна по умолчанию
 </script>
 </body>
 </html>
